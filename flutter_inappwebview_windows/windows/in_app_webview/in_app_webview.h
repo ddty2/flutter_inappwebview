@@ -200,6 +200,8 @@ namespace flutter_inappwebview_plugin
 
     void registerEventHandlers();
     void registerSurfaceEventHandlers();
+
+    void updateDownloadProgress(ICoreWebView2DownloadOperation* download);
   };
 }
 #endif //FLUTTER_INAPPWEBVIEW_PLUGIN_IN_APP_WEBVIEW_H_

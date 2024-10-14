@@ -488,6 +488,22 @@ namespace flutter_inappwebview_plugin
     channel->InvokeMethod("onLoadResourceWithCustomScheme", std::move(arguments), std::move(callback));
   }
 
+  void WebViewChannelDelegate::onDownloadStartRequest(std::string& url, const int64_t& contentLength, const std::optional<std::string>& mimeType, const std::optional<std::string>& suggestedFilename) const
+  {
+    if (!channel) {
+      return;
+    }
+
+    auto arguments = std::make_unique<flutter::EncodableValue>(flutter::EncodableMap{
+      {"url", url},
+      {"contentLength", contentLength},
+      {"mimeType", make_fl_value(mimeType)},
+      {"suggestedFilename", make_fl_value(suggestedFilename)},
+      });
+
+    channel->InvokeMethod("onDownloadStartRequest", std::move(arguments));
+  }
+
   WebViewChannelDelegate::~WebViewChannelDelegate()
   {
     debugLog("dealloc WebViewChannelDelegate");

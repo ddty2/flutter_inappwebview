@@ -923,6 +923,45 @@ namespace flutter_inappwebview_plugin
         ).Get(), nullptr));
     }
 
+    wil::com_ptr<ICoreWebView2_4> webView4;
+    if (SUCCEEDED(webView->QueryInterface(IID_PPV_ARGS(&webView4)))) {
+      failedLog(webView4->add_DownloadStarting(
+        Callback<ICoreWebView2DownloadStartingEventHandler>(
+          [this](ICoreWebView2* sender, ICoreWebView2DownloadStartingEventArgs* args) -> HRESULT {
+            wil::com_ptr<ICoreWebView2Deferral> deferral;
+            args->GetDeferral(&deferral);
+
+            args->put_Handled(TRUE);
+            wil::com_ptr<ICoreWebView2DownloadOperation> download;
+            args->get_DownloadOperation(&download);
+
+            INT64 totalBytesToReceive = 0;
+            download->get_TotalBytesToReceive(&totalBytesToReceive);
+
+            wil::unique_cotaskmem_string uri;
+            download->get_Uri(&uri);
+
+            wil::unique_cotaskmem_string mimeType;
+            download->get_MimeType(&mimeType);
+
+            wil::unique_cotaskmem_string contentDisposition;
+            download->get_ContentDisposition(&contentDisposition);
+
+            wil::unique_cotaskmem_string resultFilePath;
+            args->get_ResultFilePath(&resultFilePath);
+
+            args->put_ResultFilePath(resultFilePath.get());
+            if (channelDelegate) {
+              updateDownloadProgress(download.get());
+              std::string url = uri.is_valid() ? wide_to_utf8(uri.get()) : "";
+              channelDelegate->onDownloadStartRequest(url, totalBytesToReceive, mimeType.is_valid() ? wide_to_utf8(mimeType.get()) : std::optional<std::string>{}, std::optional<std::string>{});
+            }
+
+            return S_OK;
+          }
+        ).Get(), nullptr));
+    }
+
     /*
     wil::com_ptr<ICoreWebView2_14> webView14;
     if (SUCCEEDED(webView->QueryInterface(IID_PPV_ARGS(&webView14)))) {
@@ -945,6 +984,35 @@ namespace flutter_inappwebview_plugin
     if (userContentController) {
       userContentController->registerEventHandlers();
     }
+  }
+
+  void InAppWebView::updateDownloadProgress(ICoreWebView2DownloadOperation* download) {
+    download->add_StateChanged(
+      Callback<ICoreWebView2StateChangedEventHandler>(
+        [this](ICoreWebView2DownloadOperation* download, IUnknown* args) -> HRESULT {
+          COREWEBVIEW2_DOWNLOAD_STATE state;
+          download->get_State(&state);
+
+          if (state == COREWEBVIEW2_DOWNLOAD_STATE_COMPLETED) {
+            wil::unique_cotaskmem_string uri;
+            download->get_Uri(&uri);
+            std::string url = uri.is_valid() ? wide_to_utf8(uri.get()) : "";
+
+            wil::unique_cotaskmem_string mimeType;
+            download->get_MimeType(&mimeType);
+
+            wil::unique_cotaskmem_string resultFilePath;
+            download->get_ResultFilePath(&resultFilePath);
+
+            INT64 total = 0;
+            download->get_TotalBytesToReceive(&total);
+
+            channelDelegate->onDownloadStartRequest(url, total, mimeType.is_valid() ? wide_to_utf8(mimeType.get()) : std::optional<std::string>{}, resultFilePath.is_valid() ? wide_to_utf8(resultFilePath.get()) : std::optional<std::string>{});
+          }
+
+          return S_OK;
+        }
+    ).Get(), nullptr);
   }
 
   void InAppWebView::registerSurfaceEventHandlers()

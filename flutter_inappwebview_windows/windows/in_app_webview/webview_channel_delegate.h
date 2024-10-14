@@ -85,6 +85,7 @@ namespace flutter_inappwebview_plugin
     void onPermissionRequest(const std::string& origin, const std::vector<int64_t>& resources, std::unique_ptr<PermissionRequestCallback> callback) const;
     void shouldInterceptRequest(std::shared_ptr<WebResourceRequest> request, std::unique_ptr<ShouldInterceptRequestCallback> callback) const;
     void onLoadResourceWithCustomScheme(std::shared_ptr<WebResourceRequest> request, std::unique_ptr<LoadResourceWithCustomSchemeCallback> callback) const;
+    void onDownloadStartRequest(std::string& url, const int64_t& contentLength, const std::optional<std::string>& mimeType, const std::optional<std::string>& suggestedFilename) const;
   };
 }
 
